@@ -53,13 +53,10 @@ public:
     Sensor(const SensorConfig *config, void (*callback)(byte *buffer, size_t len, Sensor *sensor))
     {
         this->config = config;
-        DEBUG("Initializing sensor %s...", this->config->name);
+        debugV("Initializing sensor %s...", this->config->name);
         this->callback = callback;
-        this->serial = unique_ptr<SoftwareSerial>(new SoftwareSerial());
-        this->serial->begin(9600, SWSERIAL_8N1, this->config->pin, -1, false);
-        this->serial->enableTx(false);
-        this->serial->enableRx(true);
-        DEBUG("Initialized sensor %s.", this->config->name);
+        Serial.begin(9600, SERIAL_8N1);
+        debugV("Initialized sensor %s.", this->config->name);
 
         if (this->config->status_led_enabled)
         {
@@ -85,7 +82,6 @@ public:
     }
 
 private:
-    unique_ptr<SoftwareSerial> serial;
     byte buffer[BUFFER_SIZE];
     size_t position = 0;
     unsigned long last_state_reset = 0;
@@ -102,7 +98,7 @@ private:
         {
             if (this->state != STANDBY && ((millis() - this->last_state_reset) > (READ_TIMEOUT * 1000)))
             {
-                DEBUG("Did not receive an SML message within %d seconds, starting over.", READ_TIMEOUT);
+                debugV("Did not receive an SML message within %d seconds, starting over.", READ_TIMEOUT);
                 this->reset_state();
             }
             switch (this->state)
@@ -131,11 +127,11 @@ private:
     // Wrappers for sensor access
     int data_available()
     {
-        return this->serial->available();
+        return Serial.available();
     }
     int data_read()
     {
-        return this->serial->read();
+        return Serial.read();
     }
 
     // Set state
@@ -143,26 +139,27 @@ private:
     {
         if (new_state == STANDBY)
         {
-            DEBUG("State of sensor %s is 'STANDBY'.", this->config->name);
+            debugV("State of sensor %s is 'STANDBY'.", this->config->name);
         }
         else if (new_state == WAIT_FOR_START_SEQUENCE)
         {
-            DEBUG("State of sensor %s is 'WAIT_FOR_START_SEQUENCE'.", this->config->name);
+            debugV("State of sensor %s is 'WAIT_FOR_START_SEQUENCE'.", this->config->name);
+            
             this->last_state_reset = millis();
             this->position = 0;
         }
         else if (new_state == READ_MESSAGE)
         {
-            DEBUG("State of sensor %s is 'READ_MESSAGE'.", this->config->name);
+            debugV("State of sensor %s is 'READ_MESSAGE'.", this->config->name);
         }
         else if (new_state == READ_CHECKSUM)
         {
-            DEBUG("State of sensor %s is 'READ_CHECKSUM'.", this->config->name);
+            debugV("State of sensor %s is 'READ_CHECKSUM'.", this->config->name);
             this->bytes_until_checksum = 3;
         }
         else if (new_state == PROCESS_MESSAGE)
         {
-            DEBUG("State of sensor %s is 'PROCESS_MESSAGE'.", this->config->name);
+            debugV("State of sensor %s is 'PROCESS_MESSAGE'.", this->config->name);
         };
         this->state = new_state;
     }
@@ -178,7 +175,7 @@ private:
     {
         if (message != NULL && strlen(message) > 0)
         {
-            DEBUG(message);
+            Debug.printf(message);
         }
         this->init_state();
     }
@@ -210,7 +207,7 @@ private:
             if (this->position == sizeof(START_SEQUENCE))
             {
                 // Start sequence has been found
-                DEBUG("Start sequence found.");
+                debugV("Start sequence found.");
                 if (this->config->status_led_enabled)
                 {
                     this->status_led->Blink(50, 50).Repeat(3);
@@ -245,7 +242,7 @@ private:
                 }
                 if (i == last_index_of_end_seq)
                 {
-                    DEBUG("End sequence found.");
+                    debugV("End sequence found.");
                     this->set_state(READ_CHECKSUM);
                     return;
                 }
@@ -265,7 +262,7 @@ private:
 
         if (this->bytes_until_checksum == 0)
         {
-            DEBUG("Message has been read.");
+            debugV("Message has been read.");
             DEBUG_DUMP_BUFFER(this->buffer, this->position);
             this->set_state(PROCESS_MESSAGE);
         }
@@ -273,7 +270,7 @@ private:
 
     void process_message()
     {
-        DEBUG("Message is being processed.");
+        debugV("Message is being processed.");
 
         if (this->config->interval > 0)
         {

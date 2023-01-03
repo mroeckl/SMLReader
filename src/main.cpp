@@ -1,3 +1,7 @@
+#include "RemoteDebug.h"
+RemoteDebug Debug;
+
+
 #include <list>
 #include "config.h"
 #include "debug.h"
@@ -49,27 +53,19 @@ void process_message(byte *buffer, size_t len, Sensor *sensor)
 
 void setup()
 {
-	// Setup debugging stuff
-	SERIAL_DEBUG_SETUP(115200);
-
-#ifdef DEBUG
-	// Delay for getting a serial console attached in time
-	delay(2000);
-#endif
-
 	// Setup reading heads
-	DEBUG("Setting up %d configured sensors...", NUM_OF_SENSORS);
+	debugV("Setting up %d configured sensors...", NUM_OF_SENSORS);
 	const SensorConfig *config = SENSOR_CONFIGS;
 	for (uint8_t i = 0; i < NUM_OF_SENSORS; i++, config++)
 	{
 		Sensor *sensor = new Sensor(config, process_message);
 		sensors->push_back(sensor);
 	}
-	DEBUG("Sensor setup done.");
+	debugV("Sensor setup done.");
 
 	// Initialize publisher
 	// Setup WiFi and config stuff
-	DEBUG("Setting up WiFi and config stuff.");
+	debugV("Setting up WiFi and config stuff.");
 
 	paramGroup.addItem(&mqttServerParam);
 	paramGroup.addItem(&mqttPortParam);
@@ -87,6 +83,8 @@ void setup()
       publisher.disconnect();
     });
 
+	Debug.begin("SMLReader");
+
 	// -- Define how to handle updateServer calls.
 	iotWebConf.setupUpdateServer(
 		[](const char *updatePath)
@@ -97,7 +95,7 @@ void setup()
 	boolean validConfig = iotWebConf.init();
 	if (!validConfig)
 	{
-		DEBUG("Missing or invalid config. MQTT publisher disabled.");
+		debugV("Missing or invalid config. MQTT publisher disabled.");
 	}
 	else
 	{
@@ -109,7 +107,9 @@ void setup()
 	server.on("/reset", []() { needReset = true; });
 	server.onNotFound([]() { iotWebConf.handleNotFound(); });
 
-	DEBUG("Setup done.");
+	debugV("Setup done.");
+
+	Debug.handle();
 }
 
 void loop()
@@ -117,7 +117,7 @@ void loop()
 	if (needReset)
 	{
 		// Doing a chip reset caused by config changes
-		DEBUG("Rebooting after 1 second.");
+		debugV("Rebooting after 1 second.");
 		delay(1000);
 		ESP.restart();
 	}
@@ -128,16 +128,19 @@ void loop()
 	}
 	iotWebConf.doLoop();
 	yield();
+
+	// Execute debugging output
+	Debug.handle();
 }
 
 void configSaved()
 {
-	DEBUG("Configuration was updated.");
+	debugV("Configuration was updated.");
 	needReset = true;
 }
 
 void wifiConnected()
 {
-	DEBUG("WiFi connection established.");
+	debugV("WiFi connection established.");
 	publisher.connect();
 }

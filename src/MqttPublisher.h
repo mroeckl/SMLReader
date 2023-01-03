@@ -37,12 +37,12 @@ public:
     baseTopic = String(config.topic) + (lastCharOfTopic >= 0 && config.topic[lastCharOfTopic] == '/' ? "" : "/");
     lastWillTopic = String(baseTopic + MQTT_LWT_TOPIC);
 
-    DEBUG(F("MQTT: Setting up..."));
-    DEBUG(F("MQTT: Server: %s"),config.server);
-    DEBUG(F("MQTT: Port: %d"),atoi(config.port));
-    DEBUG(F("MQTT: Username: %s"),config.username);
-    DEBUG(F("MQTT: Password: <hidden>"));
-    DEBUG(F("MQTT: Topic: %s"), baseTopic.c_str());
+    debugV("MQTT: Setting up...");
+    debugV("MQTT: Server: %s",config.server);
+    debugV("MQTT: Port: %d",atoi(config.port));
+    debugV("MQTT: Username: %s",config.username);
+    debugV("MQTT: Password: <hidden>");
+    debugV("MQTT: Topic: %s", baseTopic.c_str());
     
     client.setServer(const_cast<const char *>(config.server), atoi(config.port));
     if (strlen(config.username) > 0 || strlen(config.password) > 0)
@@ -129,10 +129,10 @@ public:
   {
     if (this->connected)
     {
-      DEBUG(F("MQTT: Already connected. Aborting connection request."));
+      debugV("MQTT: Already connected. Aborting connection request.");
       return;
     }
-    DEBUG(F("MQTT: Connecting to broker..."));
+    debugV("MQTT: Connecting to broker...");
     client.connect();
   }
 
@@ -140,10 +140,10 @@ public:
   {
     if (!this->connected)
     {
-      DEBUG(F("MQTT: Not connected. Aborting disconnect request."));
+      debugV("MQTT: Not connected. Aborting disconnect request.");
       return;
     }
-    DEBUG(F("MQTT: Disconnecting from broker..."));
+    debugV("MQTT: Disconnecting from broker...");
     client.disconnect();
     this->reconnectTimer.detach();
   }
@@ -174,8 +174,8 @@ private:
   {
     if (this->connected)
     {
-      DEBUG(F("MQTT: Publishing to %s:"), topic);
-      DEBUG(F("%s\n"), payload);
+      debugV("MQTT: Publishing to %s:", topic);
+      debugV("%s\n", payload);
       client.publish(topic, qos, retain, payload, strlen(payload));
     }
   }
@@ -186,7 +186,7 @@ private:
     client.onConnect([this](bool sessionPresent) {
       this->connected = true;
       this->reconnectTimer.detach();
-      DEBUG(F("MQTT: Connection established."));
+      debugV("MQTT: Connection established.");
       char message[64];
       snprintf(message, 64, "Hello from %08X, running SMLReader version %s.", ESP.getChipId(), VERSION);
       info(message);
@@ -194,7 +194,7 @@ private:
     });
     client.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
       this->connected = false;
-      DEBUG(F("MQTT: Disconnected. Reason: %d."), reason);
+      debugV("MQTT: Disconnected. Reason: %d.", reason);
       reconnectTimer.attach(MQTT_RECONNECT_DELAY, [this]() {
         if (WiFi.isConnected()) {
           this->connect();          

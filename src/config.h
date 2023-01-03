@@ -14,7 +14,7 @@ const char *WIFI_AP_SSID = "SMLReader";
 const char *WIFI_AP_DEFAULT_PASSWORD = "";
 
 static const SensorConfig SENSOR_CONFIGS[] = {
-    {.pin = D2,
+    {.pin = D9,
      .name = "1",
      .numeric_only = false,
      .status_led_enabled = true,

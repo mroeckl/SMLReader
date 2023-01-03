@@ -1,7 +1,6 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#include "FormattingSerialDebug.h"
 #include <sml/sml_file.h>
 #include <sml/sml_value.h>
 #include "unit.h"
@@ -15,22 +14,22 @@
 void DEBUG_DUMP_BUFFER(byte *buf, int size)
 {
 #if (defined(SERIAL_DEBUG_VERBOSE) && SERIAL_DEBUG_VERBOSE)
-    DEBUG("----DATA----");
+    Debug("----DATA----");
     for (int i = 0; i < size; i++)
     {
         if (buf[i] < 16)
         {
-            SERIAL_DEBUG_IMPL.print("0");
+            Debug.print("0");
         }
-        SERIAL_DEBUG_IMPL.print(buf[i], HEX);
-        SERIAL_DEBUG_IMPL.print(" ");
+        Debug.print(buf[i], HEX);
+        Debug.print(" ");
         if (((i + 1) % 16) == 0)
         {
-            SERIAL_DEBUG_IMPL.println();
+            Debug.println();
         }
     }
-    SERIAL_DEBUG_IMPL.println();
-    DEBUG("---END OF DATA---");
+    Debug.println();
+    Debug("---END OF DATA---");
 #endif
 }
 
@@ -41,7 +40,7 @@ void DEBUG_SML_FILE(sml_file *file)
     sml_file_print(file);
 
     // read here some values ...
-    printf("OBIS data\n");
+    Debug.printf("OBIS data\n");
     for (int i = 0; i < file->messages_len; i++)
     {
         sml_message *message = file->messages[i];
@@ -54,7 +53,7 @@ void DEBUG_SML_FILE(sml_file *file)
             {
                 if (!entry->value)
                 { // do not crash on null value
-                    fprintf(stderr, "Error in data stream. entry->value should not be NULL. Skipping this.\n");
+                    Debug.printf("Error in data stream. entry->value should not be NULL. Skipping this.\n");
                     continue;
                 }
                 if (entry->value->type == SML_TYPE_OCTET_STRING)
@@ -69,7 +68,7 @@ void DEBUG_SML_FILE(sml_file *file)
                 }
                 else if (entry->value->type == SML_TYPE_BOOLEAN)
                 {
-                    printf("%d-%d:%d.%d.%d*%d#%s#\n",
+                    Debug.printf("%d-%d:%d.%d.%d*%d#%s#\n",
                            entry->obj_name->str[0], entry->obj_name->str[1],
                            entry->obj_name->str[2], entry->obj_name->str[3],
                            entry->obj_name->str[4], entry->obj_name->str[5],
@@ -84,7 +83,7 @@ void DEBUG_SML_FILE(sml_file *file)
                     if (prec < 0)
                         prec = 0;
                     value = value * pow(10, scaler);
-                    printf("%d-%d:%d.%d.%d*%d#%.*f#",
+                    Debug.printf("%d-%d:%d.%d.%d*%d#%.*f#",
                            entry->obj_name->str[0], entry->obj_name->str[1],
                            entry->obj_name->str[2], entry->obj_name->str[3],
                            entry->obj_name->str[4], entry->obj_name->str[5], prec, value);
@@ -92,7 +91,7 @@ void DEBUG_SML_FILE(sml_file *file)
                     if (entry->unit && // do not crash on null (unit is optional)
                         (unit = dlms_get_unit((unsigned char)*entry->unit)) != NULL)
                         printf("%s", unit);
-                    printf("\n");
+                    Debug.printf("\n");
                     // flush the stdout puffer, that pipes work without waiting
                     fflush(stdout);
                 }
