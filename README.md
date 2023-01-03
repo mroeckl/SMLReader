@@ -1,3 +1,12 @@
+Modified version of https://github.com/mruettgers/SMLReader:
+
+* Hardware Serial instead of Software Serial
+* Logs on Telnet Stream instead of Serial
+
+---
+
+
+
 # SMLReader
 
 An ESP8266 based smart meter (SML) to MQTT gateway 
